@@ -35,49 +35,6 @@ export default function App() {
     disability: false,
   });
 
-  // Fetch parking data
-  useEffect(() => {
-    const fetchParkingData = async () => {
-      try {
-        // Replace with your local server IP
-        const response = await fetch("http://192.168.53.74:3300/proxy");
-        const data = await response.json();
-
-        // Debug: Log data structure
-        console.log("Received data structure:", {
-          type: data.type,
-          featureCount: data.features?.length || 0,
-          sampleFeature: data.features?.[0]
-        });
-
-        if (data && data.features) {
-          // Validate the data structure
-          const validFeatures = data.features.filter(feature => {
-            const hasValidCoordinates = feature.geometry?.coordinates?.[0]?.length > 0;
-            if (!hasValidCoordinates) {
-              console.warn('Invalid feature coordinates:', feature);
-              return false;
-            }
-            return true;
-          });
-
-          console.log(`Valid features: ${validFeatures.length} out of ${data.features.length}`);
-          setParkingData(validFeatures);
-        } else {
-          throw new Error("Invalid data format received");
-        }
-      } catch (error) {
-        console.error("Error fetching parking data:", error);
-        Alert.alert(
-          "Error",
-          "Failed to fetch parking data. Please check your connection and try again."
-        );
-      }
-    };
-
-    fetchParkingData();
-  }, []);
-
   // Get current location
   useEffect(() => {
     const getLocation = async () => {
@@ -103,6 +60,33 @@ export default function App() {
 
     getLocation();
   }, []);
+
+  // Fetch parking data
+  useEffect(() => {
+    const fetchParkingData = async () => {
+      try {
+        // Replace with your local server IP
+        const response = await fetch("http://192.168.53.74:3300/proxy");
+        const data = await response.json();
+
+        // Debug: Log data to verify structure
+        console.log("Fetched parking data:", data);
+
+        if (data && data.features) {
+          setParkingData(data.features);
+        } else {
+          Alert.alert("Error", "Invalid data format received from the server.");
+        }
+      } catch (error) {
+        console.error("Error fetching parking data:", error);
+        Alert.alert("Error", "Failed to fetch parking data.");
+      }
+    };
+
+    fetchParkingData();
+  }, []);
+
+  
 
   // Filter parking data based on user inputs
   const filteredParkingData = parkingData.filter((record) => {
@@ -161,42 +145,25 @@ export default function App() {
         showsUserLocation
       >
         {parkingData.map((feature, index) => {
-          console.log(`Rendering feature ${index}:`, feature.geometry.coordinates[0]);
-          
           if (!Array.isArray(feature.geometry.coordinates[0])) {
             console.error("Invalid polygon data:", feature.geometry.coordinates);
-            return null;
+            return null; // Skip invalid data
           }
 
-          const coordinates = feature.geometry.coordinates[0].map(([lng, lat]) => ({
-            latitude: lat,
-            longitude: lng,
-          }));
-
+          // Map polygons
           return (
-            <React.Fragment key={index}>
-              <Polygon
-                coordinates={coordinates}
-                strokeColor="#FF0000"
-                strokeWidth={2}
-                fillColor="rgba(0, 255, 255, 0.5)"
-              />
-              <Marker
-                coordinate={coordinates[0]}
-                title={feature.properties.name}
-              >
-                <Callout>
-                  <View style={styles.callout}>
-                    <Text style={styles.calloutTitle}>{feature.properties.name}</Text>
-                    <Text>Type: {feature.properties.tyyppi}</Text>
-                    <Text>Status: {feature.properties.status}</Text>
-                    <Text>Spaces: {feature.properties.autopaikk}</Text>
-                    <Text>Electric: {feature.properties.sahkoauto ? "Yes" : "No"}</Text>
-                    <Text>Disability: {feature.properties.inva ? "Yes" : "No"}</Text>
-                  </View>
-                </Callout>
-              </Marker>
-            </React.Fragment>
+            <Polygon
+              key={index}
+              coordinates={feature.geometry.coordinates[0].map(
+                ([lng, lat]) => ({
+                  latitude: lat,
+                  longitude: lng,
+                })
+              )}
+              strokeColor="#FF0000"
+              strokeWidth={2}
+              fillColor="rgba(0, 255, 255, 0.5)"
+            />
           );
         })}
         {filteredParkingData.map((feature, index) => {
