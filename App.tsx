@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Image, StyleSheet, Alert, TextInput, Switch, SafeAreaView } from "react-native";
 import MapView, { Marker, Polygon, Callout } from "react-native-maps";
-import useGeoLocation from "./geoLocation";
+
 
 import * as Location from "expo-location";
 
@@ -35,6 +35,7 @@ export default function App() {
     electric: false,
     disability: false,
   });
+  
 
   // Get current location
   useEffect(() => {
@@ -176,6 +177,7 @@ export default function App() {
             <Marker
               key={index}
               coordinate={{ latitude: lat, longitude: lng }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
                 <Image 
                 source={require('./assets/map-marker.png')} 
@@ -240,7 +242,7 @@ const styles = StyleSheet.create({
   map: {
     flex: 1,
   },
-  callout: {
+   callout: {
     width: 200,
     padding: 15,
     backgroundColor: 'white',
