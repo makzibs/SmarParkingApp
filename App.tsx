@@ -177,15 +177,25 @@ export default function App() {
             <Marker
               key={index}
               coordinate={{ latitude: lat, longitude: lng }}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              //hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+              onPress={() => {
+                console.log("Marker tapped!");
+                // Additional logic for handling the tap
+              }}
             >
                 <Image 
                 source={require('./assets/map-marker.png')} 
                 style={{ width: 35, height: 35 }}
               />
            
-           <Callout tooltip>
-                <View style={styles.callout}>
+           <Callout
+                onPress={() => {
+                  console.log('Callout pressed');
+                }}
+                style={{ width: 250, height:150 }}
+               
+              >
+                <View style={styles.calloutContainer}>
                   <Text style={styles.calloutTitle}>{feature.properties.name}</Text>
                   <Text style={styles.calloutText}>Type: {feature.properties.tyyppi}</Text>
                   <Text style={styles.calloutText}>Status: {feature.properties.status}</Text>
@@ -247,6 +257,24 @@ const styles = StyleSheet.create({
     padding: 15,
     backgroundColor: 'white',
     borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  calloutContainer: {
+    width: 250,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 15,
+    minHeight: 150,
+  },
+  customTooltip: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 10,
+    padding: 15,
+    width: 200, // Adjust as necessary
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
