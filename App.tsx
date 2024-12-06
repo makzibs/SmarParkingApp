@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Alert, TextInput, Switch, SafeAreaView } from "react-native";
+import { View, Text, Image, StyleSheet, Alert, TextInput, Switch, SafeAreaView } from "react-native";
 import MapView, { Marker, Polygon, Callout } from "react-native-maps";
 import useGeoLocation from "./geoLocation";
+
 import * as Location from "expo-location";
 
 // Interfaces for data structures
@@ -66,7 +67,7 @@ export default function App() {
     const fetchParkingData = async () => {
       try {
         // Replace with your local server IP
-        const response = await fetch("http://192.168.53.74:3300/proxy");
+        const response = await fetch("http://192.168.1.120:3300/proxy");
         const data = await response.json();
 
         // Debug: Log data to verify structure
@@ -168,19 +169,27 @@ export default function App() {
         })}
         {filteredParkingData.map((feature, index) => {
           const [lng, lat] = feature.geometry.coordinates[0][0];
+
+       
+
           return (
             <Marker
               key={index}
               coordinate={{ latitude: lat, longitude: lng }}
             >
-              <Callout>
+                <Image 
+                source={require('./assets/map-marker.png')} 
+                style={{ width: 35, height: 35 }}
+              />
+           
+           <Callout tooltip>
                 <View style={styles.callout}>
                   <Text style={styles.calloutTitle}>{feature.properties.name}</Text>
-                  <Text>Type: {feature.properties.tyyppi}</Text>
-                  <Text>Status: {feature.properties.status}</Text>
-                  <Text>Spaces: {feature.properties.autopaikk}</Text>
-                  <Text>Electric: {feature.properties.sahkoauto ? "Yes" : "No"}</Text>
-                  <Text>Disability: {feature.properties.inva ? "Yes" : "No"}</Text>
+                  <Text style={styles.calloutText}>Type: {feature.properties.tyyppi}</Text>
+                  <Text style={styles.calloutText}>Status: {feature.properties.status}</Text>
+                  <Text style={styles.calloutText}>Spaces: {feature.properties.autopaikk}</Text>
+                  <Text style={styles.calloutText}>Electric: {feature.properties.sahkoauto ? "Yes" : "No"}</Text>
+                  <Text style={styles.calloutText}>Disability: {feature.properties.inva ? "Yes" : "No"}</Text>
                 </View>
               </Callout>
             </Marker>
@@ -196,6 +205,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -231,11 +241,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   callout: {
-    padding: 8,
-    maxWidth: 200,
+    width: 200,
+    padding: 15,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   calloutTitle: {
-    fontWeight: "bold",
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#333',
+  },
+  calloutText: {
+    fontSize: 14,
     marginBottom: 4,
+    color: '#666',
   },
 });
