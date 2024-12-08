@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Image, StyleSheet, Alert, TextInput, Switch, SafeAreaView } from "react-native";
 import MapView, { Marker, Polygon, Callout } from "react-native-maps";
+import Icon from "react-native-vector-icons/FontAwesome"; 
 
 import * as Location from "expo-location";
 
@@ -146,16 +147,16 @@ export default function App() {
               <Marker
                 key={index}
                 coordinate={{ latitude: lat, longitude: lng }}
+           
+              
               >
-                <Image
-                  source={require('./assets/map-marker.png')}
-                  style={{ width: 35, height: 35 }}
-                />
+                
+                  <Icon name="map-marker" size={35} color="red" />
                 <Callout
                   onPress={() => {
                     console.log('Callout pressed');
                   }}
-                  style={{ width: 250, height: 150 }}
+                  //style={{ width: 250, height: 150, zIndex: 10}}
                 >
                   <View style={styles.calloutContainer}>
                     <Text style={styles.calloutTitle}>{feature.properties.name}</Text>
@@ -230,7 +231,7 @@ const styles = StyleSheet.create({
   mapContainer: {
     flex: 1, // Takes remaining space
     position: 'relative',
-    marginTop: 8,
+   
 
   },
   map: {
@@ -312,3 +313,7 @@ const styles = StyleSheet.create({
     color: '#666',
   },
 });
+/*<Image
+                  source={require('./assets/map-marker.png')}
+                  style={{ width: 35, height: 35 }}
+                />*/
