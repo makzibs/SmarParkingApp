@@ -3,14 +3,15 @@ import {
   View,
   Text,
   StyleSheet,
-  Alert,
+  Modal,
   TextInput,
   Switch,
   SafeAreaView,
+  TouchableOpacity,
+  Alert,
 } from "react-native";
-import MapView, { Marker, Polygon, Callout } from "react-native-maps";
+import MapView, { Marker, Polygon } from "react-native-maps";
 import Icon from "react-native-vector-icons/FontAwesome";
-
 import * as Location from "expo-location";
 
 // Interfaces for data structures
@@ -43,6 +44,8 @@ export default function App() {
     electric: false,
     disability: false,
   });
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedParking, setSelectedParking] = useState<ParkingFeature | null>(null);
 
   // Calculate distance between two coordinates
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): string => {
@@ -87,12 +90,8 @@ export default function App() {
   useEffect(() => {
     const fetchParkingData = async () => {
       try {
-        // Replace with your local server IP
         const response = await fetch("http://192.168.137.163:3300/proxy");
         const data = await response.json();
-
-        // Debug: Log data to verify structure
-        console.log("Fetched parking data:", data);
 
         if (data && data.features) {
           setParkingData(data.features);
@@ -143,7 +142,7 @@ export default function App() {
           {parkingData.map((feature, index) => {
             if (!Array.isArray(feature.geometry.coordinates[0])) {
               console.error("Invalid polygon data:", feature.geometry.coordinates);
-              return null; // Skip invalid data
+              return null;
             }
 
             return (
@@ -162,7 +161,7 @@ export default function App() {
             );
           })}
 
-          {/* Render Markers with Callouts */}
+          {/* Render Markers */}
           {filteredParkingData.map((feature, index) => {
             const [lng, lat] = feature.geometry.coordinates[0][0];
             const distance = calculateDistance(currentLocation.latitude, currentLocation.longitude, lat, lng);
@@ -172,41 +171,11 @@ export default function App() {
                 key={index}
                 coordinate={{ latitude: lat, longitude: lng }}
                 onPress={() => {
-                  Alert.alert(
-                    `${feature.properties.name}`, // Title
-                    `Distance: ${distance}\n` +
-                    `Type: ${feature.properties.tyyppi}\n` + // Multiline message
-                    `Status: ${feature.properties.status}\n` +
-                    `Spaces: ${feature.properties.autopaikk}\n` +
-                    `Electric: ${feature.properties.sahkoauto ? "Yes" : "No"}\n` +
-                    `Disability: ${feature.properties.inva ? "Yes" : "No"}`,
-                    [{ text: "OK", onPress: () => console.log("Alert closed") }]
-                  );
+                  setSelectedParking(feature);
+                  setModalVisible(true);
                 }}
               >
-               
-                {/* Custom Marker Icon */}
                 <Icon name="map-marker" size={35} color="red" />
-
-                {/* Custom Callout */}
-                <Callout
-                  onPress={() => {
-                   
-                  }}
-                >
-                  <View style={styles.calloutContainer}>
-                    <Text style={styles.calloutTitle}>{feature.properties.name}</Text>
-                    <Text style={styles.calloutText}>Type: {feature.properties.tyyppi}</Text>
-                    <Text style={styles.calloutText}>Status: {feature.properties.status}</Text>
-                    <Text style={styles.calloutText}>Spaces: {feature.properties.autopaikk}</Text>
-                    <Text style={styles.calloutText}>
-                      Electric: {feature.properties.sahkoauto ? "Yes" : "No"}
-                    </Text>
-                    <Text style={styles.calloutText}>
-                      Disability: {feature.properties.inva ? "Yes" : "No"}
-                    </Text>
-                  </View>
-                </Callout>
               </Marker>
             );
           })}
@@ -244,6 +213,37 @@ export default function App() {
           </View>
         </View>
       </View>
+
+      {/* Custom Modal for Parking Details */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            {selectedParking && (
+              <>
+                <Text style={styles.modalTitle}>{selectedParking.properties.name}</Text>
+                <Text style={styles.modalText}>Distance: {calculateDistance(currentLocation.latitude, currentLocation.longitude, selectedParking.geometry.coordinates[0][0][1], selectedParking.geometry.coordinates[0][0][0])}</Text>
+                <Text style={styles.modalText}>Type: {selectedParking.properties.tyyppi}</Text>
+                <Text style={styles.modalText}>Status: {selectedParking.properties.status}</Text>
+                <Text style={styles.modalText}>Spaces: {selectedParking.properties.autopaikk}</Text>
+                <Text style={styles.modalText}>Electric: {selectedParking.properties.sahkoauto ? "Yes" : "No"}</Text>
+                <Text style={styles.modalText}>Disability: {selectedParking.properties.inva ? "Yes" : "No"}</Text>
+
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.closeButtonText}>Close</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -252,110 +252,101 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   header: {
-    paddingTop : 28,
-    backgroundColor: '#fff',
+    paddingTop: 28,
+    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    height: '8%', // Reduced height for just the title
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderBottomColor: "#e0e0e0",
+    height: "8%",
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-
-    color: '#333',
-    textAlign: 'center', // Centers the text itself
+    fontWeight: "bold",
+    color: "#333",
+    textAlign: "center",
   },
   mapContainer: {
-    flex: 1, // Takes remaining space
-    position: 'relative',
-   
-
+    flex: 1,
   },
   map: {
-    ...StyleSheet.absoluteFillObject,
+    width: "100%",
+    height: "100%",
   },
   searchInputAbsolute: {
-    position: 'absolute',
-    top: 20,
-    left: 20,
-    right: 20,
-    height: 40,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    zIndex: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    position: "absolute",
+    top: 10,
+    left: 10,
+    right: 10,
+    backgroundColor: "white",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 12,
+    elevation: 3,
   },
   filtersOverlay: {
     position: 'absolute',
-    top: 80,
-    left: 0,
-    right: 0,
+    top: 60,
+    left: 16,
+    
     zIndex: 1,
     alignItems: 'center',
     width: '50%',
   },
   filterCard: {
-    backgroundColor: 'rgba(255, 255, 255, 1)', // Semi-transparent white
-    borderRadius: 12,
-
-    padding: 6,
-    marginLeft: 38,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-    width: '100%', // Set a specific width
-    alignSelf: 'center', // Center itself
+    backgroundColor: "#fff",
+    padding: 10,
+    borderRadius: 8,
   },
   filterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 2,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
   },
   filterText: {
-    fontSize: 12,
-    marginRight: 12,
-    color: '#333',
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContainer: {
+    width: 300,
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 10,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  modalText: {
+    fontSize: 16,
+    marginBottom: 8,
+  },
+  closeButton: {
+    marginTop: 20,
+    backgroundColor: "#FF6347",
+    paddingVertical: 10,
+    borderRadius: 5,
+    alignItems: "center",
+  },
+  closeButtonText: {
+    color: "#fff",
+    fontSize: 16,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-  calloutContainer: {
-    width: 250,
-    backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 15,
-    minHeight: 150,
-  },
-  calloutTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#333',
-  },
-  calloutText: {
-    fontSize: 14,
-    marginBottom: 4,
-    color: '#666',
-  },
 });
-/*<Image
-                  source={require('./assets/map-marker.png')}
-                  style={{ width: 35, height: 35 }}
-                />*/
