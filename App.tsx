@@ -1,7 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Image, StyleSheet, Alert, TextInput, Switch, SafeAreaView } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Alert,
+  TextInput,
+  Switch,
+  SafeAreaView,
+} from "react-native";
 import MapView, { Marker, Polygon, Callout } from "react-native-maps";
-import Icon from "react-native-vector-icons/FontAwesome"; 
+import Icon from "react-native-vector-icons/FontAwesome";
 
 import * as Location from "expo-location";
 
@@ -36,6 +44,19 @@ export default function App() {
     disability: false,
   });
 
+  // Calculate distance between two coordinates
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): string => {
+    const R = 6371; // Radius of the Earth in kilometers
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c; // Distance in kilometers
+    return `${distance.toFixed(2)} km`;
+  };
+
   // Get current location
   useEffect(() => {
     const getLocation = async () => {
@@ -67,7 +88,7 @@ export default function App() {
     const fetchParkingData = async () => {
       try {
         // Replace with your local server IP
-        const response = await fetch("http://192.168.137.74:3300/proxy");
+        const response = await fetch("http://192.168.137.163:3300/proxy");
         const data = await response.json();
 
         // Debug: Log data to verify structure
@@ -118,13 +139,13 @@ export default function App() {
           initialRegion={currentLocation}
           showsUserLocation
         >
+          {/* Render Polygons */}
           {parkingData.map((feature, index) => {
             if (!Array.isArray(feature.geometry.coordinates[0])) {
               console.error("Invalid polygon data:", feature.geometry.coordinates);
               return null; // Skip invalid data
             }
 
-            // Map polygons
             return (
               <Polygon
                 key={index}
@@ -140,31 +161,50 @@ export default function App() {
               />
             );
           })}
+
+          {/* Render Markers with Callouts */}
           {filteredParkingData.map((feature, index) => {
             const [lng, lat] = feature.geometry.coordinates[0][0];
+            const distance = calculateDistance(currentLocation.latitude, currentLocation.longitude, lat, lng);
 
             return (
               <Marker
                 key={index}
                 coordinate={{ latitude: lat, longitude: lng }}
-           
-              
+                onPress={() => {
+                  Alert.alert(
+                    `${feature.properties.name}`, // Title
+                    `Distance: ${distance}\n` +
+                    `Type: ${feature.properties.tyyppi}\n` + // Multiline message
+                    `Status: ${feature.properties.status}\n` +
+                    `Spaces: ${feature.properties.autopaikk}\n` +
+                    `Electric: ${feature.properties.sahkoauto ? "Yes" : "No"}\n` +
+                    `Disability: ${feature.properties.inva ? "Yes" : "No"}`,
+                    [{ text: "OK", onPress: () => console.log("Alert closed") }]
+                  );
+                }}
               >
-                
-                  <Icon name="map-marker" size={35} color="red" />
+               
+                {/* Custom Marker Icon */}
+                <Icon name="map-marker" size={35} color="red" />
+
+                {/* Custom Callout */}
                 <Callout
                   onPress={() => {
-                    console.log('Callout pressed');
+                   
                   }}
-                  //style={{ width: 250, height: 150, zIndex: 10}}
                 >
                   <View style={styles.calloutContainer}>
                     <Text style={styles.calloutTitle}>{feature.properties.name}</Text>
                     <Text style={styles.calloutText}>Type: {feature.properties.tyyppi}</Text>
                     <Text style={styles.calloutText}>Status: {feature.properties.status}</Text>
                     <Text style={styles.calloutText}>Spaces: {feature.properties.autopaikk}</Text>
-                    <Text style={styles.calloutText}>Electric: {feature.properties.sahkoauto ? "Yes" : "No"}</Text>
-                    <Text style={styles.calloutText}>Disability: {feature.properties.inva ? "Yes" : "No"}</Text>
+                    <Text style={styles.calloutText}>
+                      Electric: {feature.properties.sahkoauto ? "Yes" : "No"}
+                    </Text>
+                    <Text style={styles.calloutText}>
+                      Disability: {feature.properties.inva ? "Yes" : "No"}
+                    </Text>
                   </View>
                 </Callout>
               </Marker>
@@ -172,6 +212,7 @@ export default function App() {
           })}
         </MapView>
 
+        {/* Search Input */}
         <TextInput
           style={styles.searchInputAbsolute}
           placeholder="Search parking spots"
@@ -179,6 +220,7 @@ export default function App() {
           onChangeText={setSearchTerm}
         />
 
+        {/* Filters */}
         <View style={styles.filtersOverlay}>
           <View style={styles.filterCard}>
             <View style={styles.filterRow}>
